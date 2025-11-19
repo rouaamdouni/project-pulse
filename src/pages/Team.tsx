@@ -1,12 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Mail, User } from "lucide-react";
+import { Plus, Mail, User, Star } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { EvaluationDialog } from "@/components/EvaluationDialog";
+import { useState } from "react";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 export default function Team() {
-  const members = [
+  const { addNotification } = useNotifications();
+  const [evaluationOpen, setEvaluationOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<{ id: number; name: string } | null>(null);
+  const [members, setMembers] = useState([
     {
       id: 1,
       name: "Alice Dupont",
@@ -51,7 +57,25 @@ export default function Team() {
       rating: 4.7,
       color: "from-primary to-secondary",
     },
-  ];
+  ]);
+
+  const handleSaveEvaluation = (evaluation: any) => {
+    if (selectedMember) {
+      setMembers(prev =>
+        prev.map(m =>
+          m.id === selectedMember.id
+            ? { ...m, rating: evaluation.rating, completion: Math.round((evaluation.quality + evaluation.communication + evaluation.deadlines) / 3) }
+            : m
+        )
+      );
+      
+      addNotification({
+        title: "Évaluation enregistrée",
+        message: `L'évaluation de ${selectedMember.name} a été mise à jour`,
+        type: "evaluation",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -113,21 +137,41 @@ export default function Team() {
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Évaluation</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg font-bold text-accent">★</span>
-                    <span className="text-sm font-medium text-foreground">{member.rating}</span>
-                  </div>
+                <div className="flex items-center gap-1 text-yellow-500">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < Math.floor(member.rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+                      }`}
+                    />
+                  ))}
+                  <span className="text-sm text-muted-foreground ml-2">{member.rating}</span>
                 </div>
-                <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5">
-                  Voir profil
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedMember({ id: member.id, name: member.name });
+                    setEvaluationOpen(true);
+                  }}
+                >
+                  Évaluer
                 </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {selectedMember && (
+        <EvaluationDialog
+          open={evaluationOpen}
+          onOpenChange={setEvaluationOpen}
+          memberName={selectedMember.name}
+          onSave={handleSaveEvaluation}
+        />
+      )}
     </div>
   );
 }
