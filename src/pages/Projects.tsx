@@ -1,58 +1,84 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Grid3x3, List, FolderKanban, Users, Calendar } from "lucide-react";
+import { Plus, Grid3x3, List, FolderKanban, Users, Calendar, Edit } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ProjectDialog, Project } from "@/components/ProjectDialog";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 type ViewMode = "grid" | "list";
 
 export default function Projects() {
+  const { addNotification } = useNotifications();
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-
-  const projects = [
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | undefined>(undefined);
+  const [projects, setProjects] = useState<Project[]>([
     {
-      id: 1,
+      id: "1",
       name: "Refonte Site Web",
       description: "Modernisation complète du site web corporate",
-      status: "En cours",
+      status: "active",
       progress: 65,
-      team: 5,
-      deadline: "15 Déc 2024",
-      color: "bg-primary",
+      teamSize: 5,
+      deadline: "2024-12-15",
     },
     {
-      id: 2,
+      id: "2",
       name: "Application Mobile",
       description: "Développement de l'app iOS et Android",
-      status: "En cours",
+      status: "active",
       progress: 45,
-      team: 4,
-      deadline: "20 Jan 2025",
-      color: "bg-accent",
+      teamSize: 4,
+      deadline: "2025-01-20",
     },
     {
-      id: 3,
+      id: "3",
       name: "Migration Cloud",
       description: "Migration infrastructure vers AWS",
-      status: "Presque terminé",
+      status: "completed",
       progress: 90,
-      team: 3,
-      deadline: "30 Nov 2024",
-      color: "bg-secondary",
+      teamSize: 3,
+      deadline: "2024-11-30",
     },
     {
-      id: 4,
+      id: "4",
       name: "Nouveau CRM",
       description: "Implémentation Salesforce",
-      status: "Planification",
+      status: "on-hold",
       progress: 15,
-      team: 6,
-      deadline: "15 Fév 2025",
-      color: "bg-status-todo",
+      teamSize: 6,
+      deadline: "2025-02-15",
     },
-  ];
+  ]);
+
+  const handleSaveProject = (project: Omit<Project, 'id'> | Project) => {
+    if ('id' in project) {
+      setProjects(prev => prev.map(p => p.id === project.id ? project : p));
+      addNotification({
+        title: "Projet modifié",
+        message: `Le projet "${project.name}" a été mis à jour`,
+        type: "project",
+      });
+    } else {
+      const newProject = { ...project, id: Date.now().toString() };
+      setProjects(prev => [...prev, newProject]);
+      addNotification({
+        title: "Projet créé",
+        message: `Le projet "${project.name}" a été créé avec succès`,
+        type: "project",
+      });
+    }
+  };
+
+  const getStatusLabel = (status: Project['status']) => {
+    switch (status) {
+      case 'active': return 'Actif';
+      case 'on-hold': return 'En pause';
+      case 'completed': return 'Terminé';
+    }
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -80,12 +106,16 @@ export default function Projects() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-          <Link to="/projects/new">
-            <Button className="bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-opacity shadow-soft">
-              <Plus className="h-4 w-4 mr-2" />
-              Nouveau projet
-            </Button>
-          </Link>
+          <Button 
+            onClick={() => {
+              setEditingProject(undefined);
+              setDialogOpen(true);
+            }}
+            className="bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-opacity shadow-soft"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau projet
+          </Button>
         </div>
       </div>
 
@@ -99,12 +129,26 @@ export default function Projects() {
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className={`p-2 rounded-lg ${project.color} bg-opacity-10`}>
-                    <FolderKanban className={`h-5 w-5 ${project.color.replace('bg-', 'text-')}`} />
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <FolderKanban className="h-5 w-5 text-primary" />
                   </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {project.status}
-                  </Badge>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {getStatusLabel(project.status)}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingProject(project);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <CardTitle className="mt-4 group-hover:text-primary transition-colors">
                   {project.name}
@@ -121,7 +165,7 @@ export default function Projects() {
                   </div>
                   <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
-                      className={`h-full ${project.color} transition-all duration-500`}
+                      className="h-full bg-primary transition-all duration-500"
                       style={{ width: `${project.progress}%` }}
                     />
                   </div>
@@ -129,11 +173,11 @@ export default function Projects() {
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{project.team} membres</span>
+                    <span className="text-sm text-muted-foreground">{project.teamSize} membres</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{project.deadline}</span>
+                    <span className="text-sm text-muted-foreground">{new Date(project.deadline).toLocaleDateString('fr-FR')}</span>
                   </div>
                 </div>
               </CardContent>
@@ -150,8 +194,8 @@ export default function Projects() {
                   className="p-4 hover:bg-muted/50 transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-lg ${project.color} bg-opacity-10 flex-shrink-0`}>
-                      <FolderKanban className={`h-5 w-5 ${project.color.replace('bg-', 'text-')}`} />
+                    <div className="p-3 rounded-lg bg-primary/10 flex-shrink-0">
+                      <FolderKanban className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1">
@@ -159,7 +203,7 @@ export default function Projects() {
                           {project.name}
                         </h3>
                         <Badge variant="secondary" className="text-xs">
-                          {project.status}
+                          {getStatusLabel(project.status)}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
@@ -174,7 +218,7 @@ export default function Projects() {
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
                           <div
-                            className={`h-full ${project.color}`}
+                            className="h-full bg-primary"
                             style={{ width: `${project.progress}%` }}
                           />
                         </div>
@@ -182,25 +226,25 @@ export default function Projects() {
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Users className="h-4 w-4" />
-                          <span>{project.team}</span>
+                          <span>{project.teamSize}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          <span>{project.deadline}</span>
+                          <span>{new Date(project.deadline).toLocaleDateString('fr-FR')}</span>
                         </div>
                       </div>
                       <div className="flex -space-x-2">
-                        {Array.from({ length: Math.min(project.team, 3) }).map((_, i) => (
+                        {Array.from({ length: Math.min(project.teamSize, 3) }).map((_, i) => (
                           <Avatar key={i} className="h-8 w-8 border-2 border-background">
                             <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xs">
                               {String.fromCharCode(65 + i)}
                             </AvatarFallback>
                           </Avatar>
                         ))}
-                        {project.team > 3 && (
+                        {project.teamSize > 3 && (
                           <Avatar className="h-8 w-8 border-2 border-background">
                             <AvatarFallback className="bg-muted text-xs">
-                              +{project.team - 3}
+                              +{project.teamSize - 3}
                             </AvatarFallback>
                           </Avatar>
                         )}
@@ -213,6 +257,13 @@ export default function Projects() {
           </CardContent>
         </Card>
       )}
+
+      <ProjectDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        project={editingProject}
+        onSave={handleSaveProject}
+      />
     </div>
   );
 }
