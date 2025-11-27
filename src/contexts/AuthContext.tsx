@@ -11,7 +11,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, role?: 'admin' | 'member') => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -42,13 +42,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('user', JSON.stringify(mockUser));
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (email: string, password: string, name: string, role: 'admin' | 'member' = 'member') => {
     // Mock signup - in production this would call your backend
     const mockUser: User = {
       id: Date.now().toString(),
       email,
       name,
-      role: 'member',
+      role,
     };
     setUser(mockUser);
     localStorage.setItem('user', JSON.stringify(mockUser));

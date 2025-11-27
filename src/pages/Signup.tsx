@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -11,6 +12,7 @@ const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [role, setRole] = useState<'admin' | 'member'>('member');
   const [isLoading, setIsLoading] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -20,7 +22,7 @@ const Signup = () => {
     setIsLoading(true);
     
     try {
-      await signup(email, password, name);
+      await signup(email, password, name, role);
       toast.success('Compte créé avec succès!');
       navigate('/');
     } catch (error) {
@@ -73,6 +75,18 @@ const Signup = () => {
                 required
                 minLength={6}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Rôle</Label>
+              <Select value={role} onValueChange={(value: 'admin' | 'member') => setRole(value)}>
+                <SelectTrigger id="role" className="w-full bg-background">
+                  <SelectValue placeholder="Sélectionnez un rôle" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border">
+                  <SelectItem value="admin">Chef de projet</SelectItem>
+                  <SelectItem value="member">Membre</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Création...' : 'Créer mon compte'}
