@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import TasksWithDnd from "./pages/TasksWithDnd";
 import Team from "./pages/Team";
+import Notifications from "./pages/Notifications";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
@@ -51,6 +52,7 @@ const App = () => (
                         <Route path="/projects" element={<Projects />} />
                         <Route path="/tasks" element={<TasksWithDnd />} />
                         <Route path="/team" element={<Team />} />
+                        <Route path="/notifications" element={<Notifications />} />
                         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>
